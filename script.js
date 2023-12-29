@@ -595,7 +595,11 @@ function getResult() {
 
     // check if day is in any name's block out dates
     let noSolution = true;
-    for (let name in nameListCopy) {
+    // shuffle nameListCopy to spread out names
+    for (let name of Object.keys(nameListCopy)
+      .map((value) => ({ value, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ value }) => value)) {
       if (!nameBlock[name].includes(day)) {
         if (nameListCopy[name] > 0) {
           nameListCopy[name]--;
