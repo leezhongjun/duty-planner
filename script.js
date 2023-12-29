@@ -597,7 +597,7 @@ function getResult() {
     let noSolution = true;
     // shuffle nameListCopy to spread out names
     for (let name of Object.keys(nameListCopy)
-      .map((value) => ({ value, sort: Math.random() }))
+      .map((value) => ({ value, sort: rng() }))
       .sort((a, b) => a.sort - b.sort)
       .map(({ value }) => value)) {
       if (!nameBlock[name].includes(day)) {
