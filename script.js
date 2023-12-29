@@ -536,7 +536,11 @@ function getResult() {
 
   // seedrandom takes in a string
   // https://github.com/davidbau/seedrandom
-  let rng = new Math.seedrandom(document.getElementById("randomSeed").value);
+  let rng = new Math.seedrandom(
+    document.getElementById("randomSeed").value === ""
+      ? null
+      : document.getElementById("randomSeed").value
+  );
 
   // shuffle randomPool with rng()
   // Durstenfeld shuffle : https://en.wikipedia.org/wiki/Fisher-Yates_shuffle#The_modern_algorithm
