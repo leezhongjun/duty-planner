@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body class="m-10">
+    <h1 class="text-3xl font-bold underline">Level Duty Planner</h1>
+
+    <label for="setSave" class="flex items-center mt-4 mb-2">
+      <input
+        type="checkbox"
+        id="setSave"
+        class="mr-2"
+        onchange="updateSave()"
+        checked
+      />
+      Save inputs for future use?
+    </label>
+
+    <h2 class="text-xl font-bold mt-2">Name list and extra duties</h2>
+    <p class="text-gray-500 italic leading-loose">
+      Format: {name} {no. of extra duties} (empty if no extra duty)<br />
+      Example: Ian 1
+    </p>
+    <textarea
+      id="nameList"
+      class="w-full h-[115px] resize-none border border-gray-300 rounded-md p-2"
+      oninput="autoResize(this.id); updateNameList(); updateNameBlock(); updateSave()"
+      placeholder="Ian 1&#10;Danyel&#10;Xavier&#10;Neville 2"
+    ></textarea>
+    <p id="nameListError" class="text-red-500 hidden">Error:</p>
+    <p id="nameListInfo" class="hidden">No. of names: Total extra duties:</p>
+
+    <h2 class="text-xl font-bold mt-2">Block out dates</h2>
+    <p class="text-gray-500 italic leading-loose">
+      Format: {name}/{block out dates}<br />
+      Example: Ian/03-01-2024, 16-01-2024 - 18-01-2024
+    </p>
+    <label for="ignoreFirstThreeLines" class="items-center">
+      <input
+        type="checkbox"
+        id="ignoreFirstThreeLines"
+        class="mr-2 mt-1 mb-4"
+        onchange="ignoreFirstThreeLines(); updateSave()"
+        checked
+      />
+      Ignore first 3 lines?
+    </label>
+    <textarea
+      id="nameBlock"
+      class="w-full md:h-64 h-72 resize-none border border-gray-300 rounded-md p-2"
+      oninput="autoResize(this.id); updateNameBlock(); updateNameList(); updateSave()"
+      placeholder="Follow the format below:&#10;Name/Block out dates&#10;Eg. Lester/01-05-2023&#10;&#10;Ian/03-01-2024, 16-01-2024 - 18-01-2024&#10;&#10;Neville/03-01-2024&#10;&#10;Danyel/5-01-2024, 8-01-2024, 12-01-2024"
+    ></textarea>
+    <p id="nameBlockError" class="text-red-500 hidden">Error:</p>
+
+    <h2 id="dateHeader" class="text-xl font-bold mt-2">
+      Select days with no duty (holidays, etc.)
+    </h2>
+    <input
+      id="date-picker"
+      class="w-full resize-none border border-gray-300 rounded-md p-2"
+      onchange="autoResize(this.id)"
+      placeholder="Click here"
+    />
+
+    <h2 class="text-xl font-bold mt-2">Exclude from random selection</h2>
+    <textarea
+      id="excludeNames"
+      class="w-full h-18 resize-none border border-gray-300 rounded-md p-2"
+      oninput="autoResize(this.id); updateExcludeNames(); updateSave()"
+      placeholder="Ian&#10;Danyel"
+    ></textarea>
+    <p id="excludeNamesError" class="text-red-500 hidden">Error:</p>
+
+    <h2 class="text-xl font-bold mt-2">Random seed</h2>
+    <p class="text-gray-500 italic leading-loose">
+      Blank: random seed<br />
+      Set seed value to <u>yyyymm</u>
+    </p>
+    <input
+      id="randomSeed"
+      class="w-full resize-none border border-gray-300 rounded-md p-2"
+      onchange="autoResize(this.id); updateSave()"
+      placeholder="Leave blank for random seed"
+    />
+
+    <h2 class="text-xl font-bold mt-2">Result</h2>
+    <div class="flex mt-2 mb-2">
+      <button
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+        onclick="getResult()"
+      >
+        Get result
+      </button>
+      <button
+        id="copyResult"
+        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded hidden"
+        onclick="copyResult()"
+      >
+        Copy result
+      </button>
+    </div>
+
+    <p id="resultError" class="text-red-500 hidden">Error:</p>
+    <textarea id="result" class="text-gray-500 hidden" disabled></textarea>
+
+    <script
+      src="https://unpkg.com/date-holidays/dist/umd.min.js"
+      type="text/javascript"
+      charset="utf-8"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
