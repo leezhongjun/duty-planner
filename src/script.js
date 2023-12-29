@@ -316,7 +316,7 @@ function updateNameList() {
     nameListInfo.style.display = "none";
   }
 
-  console.log(nameList);
+  // console.log(nameList);
 }
 
 // Function to update nameBlock
@@ -401,7 +401,7 @@ function updateNameBlock() {
 
   // close error message
   nameBlockError.style.display = "none";
-  console.log(nameBlock);
+  // console.log(nameBlock);
 }
 
 // Function to update exludeNames
@@ -432,7 +432,7 @@ function updateExcludeNames() {
       return true;
     });
 
-  console.log(excludeNames);
+  // console.log(excludeNames);
 }
 
 // Function that updates hols with all days in the month that is a holiday in Singapore with date-holidays
@@ -535,6 +535,7 @@ function getResult() {
     .sort();
 
   // seedrandom takes in a string
+  // https://github.com/davidbau/seedrandom
   let rng = new Math.seedrandom(document.getElementById("randomSeed").value);
 
   // shuffle randomPool with rng()
@@ -558,7 +559,7 @@ function getResult() {
     }
   }
 
-  console.log(nameListCopy);
+  // console.log(nameListCopy);
 
   let calendar = {};
   let totalDaysInMonth = new Date(year, month, 0).getDate();
@@ -573,8 +574,8 @@ function getResult() {
       dutyDays[i] = 1;
     }
   }
-  console.log(holsDates);
-  console.log(dutyDays);
+  // console.log(holsDates);
+  // console.log(dutyDays);
   // fill calendar with names, starting from 1st day of month, excluding weekends and holidays, and excluding the names' block out dates
   // calendar = {day: name}
   // use backtracking to fill calendar
@@ -595,7 +596,7 @@ function getResult() {
         if (nameListCopy[name] > 0) {
           nameListCopy[name]--;
           calendar[day] = name;
-          console.log(dutyDays[day], day);
+          // console.log(dutyDays[day], day);
           if (fillCalendar(day + 1)) {
             noSolution = false;
             break;
@@ -610,7 +611,7 @@ function getResult() {
     return !noSolution;
   }
 
-  console.log(calendar);
+  // console.log(calendar);
   if (!fillCalendar(1)) {
     // display error message, return
     document.getElementById("resultError").style.display = "block";
