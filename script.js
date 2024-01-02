@@ -11,6 +11,8 @@ let year = 0;
 let hols = [];
 // date.getDay(): holiday name
 let holNames = {};
+// flag to check if first date has not been formatted yet
+let firstDate = true;
 
 let numDaysInMonth = 31;
 
@@ -109,6 +111,7 @@ function ignoreFirstThreeLines() {
   updateNameBlock();
 }
 
+// Function to check if name is already in name list
 function checkNameRepeat(name) {
   nameListError = document.getElementById("nameListError");
   if (Object.keys(nameList).includes(name)) {
@@ -121,6 +124,8 @@ function checkNameRepeat(name) {
   }
 }
 
+// Function to format date string
+// comma seperated, dd-mm-yyyy or dd-mm-yyyy - dd-mm-yyyy
 function formatDate(line, rawDates, nameBlockError) {
   // split comma, trim and filter
   let dates = rawDates
@@ -180,10 +185,13 @@ function formatDate(line, rawDates, nameBlockError) {
         return;
       }
 
-      // set month if month = 0, else check if month is the same
-      if (month === 0) {
+      // set month if month = 0 or if its the first date
+      if (month === 0 || firstDate) {
         month = dateRange[1 + i];
         updateMonthYear();
+        // first date has been formatted
+        firstDate = false;
+        // else check if month is the same
       } else if (month !== dateRange[1 + i]) {
         // display error message, return
         nameBlockError.style.display = "block";
@@ -315,8 +323,6 @@ function updateNameList() {
   } else {
     nameListInfo.style.display = "none";
   }
-
-  // console.log(nameList);
 }
 
 // Function to update nameBlock
@@ -328,6 +334,9 @@ function updateNameBlock() {
 
   // empty nameBlock
   nameBlock = {};
+
+  // first date has not been formatted yet
+  firstDate = true;
 
   // split newline, trim, filter empty lines
   let lines = rawNameBlock
@@ -401,7 +410,6 @@ function updateNameBlock() {
 
   // close error message
   nameBlockError.style.display = "none";
-  // console.log(nameBlock);
 }
 
 // Function to update exludeNames
@@ -431,8 +439,6 @@ function updateExcludeNames() {
       excludeNamesError.style.display = "none";
       return true;
     });
-
-  // console.log(excludeNames);
 }
 
 // Function that updates hols with all days in the month that is a holiday in Singapore with date-holidays
@@ -446,7 +452,6 @@ function getHolidays() {
     (holiday) => new Date(holiday.date).getMonth() + 1 === month
   );
 
-  // console.log(holidaysInMonth);
   // update hols
   hols = holidaysInMonth.map((holiday) => new Date(holiday.date));
 
@@ -482,6 +487,7 @@ function updateMonthYear() {
   dateHeader.innerHTML = `Days with no duty (holidays, etc.) - ${month}/${year}`;
 }
 
+// Initialise datepicker
 const datepicker = flatpickr("#date-picker", {
   mode: "multiple",
   dateFormat: "d-m-Y",
@@ -507,6 +513,16 @@ const datepicker = flatpickr("#date-picker", {
   },
 });
 
+// Function to shuffle array
+// Durstenfeld shuffle : https://en.wikipedia.org/wiki/Fisher-Yates_shuffle#The_modern_algorithm
+function shuffleArray(array, rng) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+// Function to get duty roster result
 function getResult() {
   // check if there are any errors
   errorIds = ["nameListError", "nameBlockError", "excludeNamesError"];
@@ -538,16 +554,12 @@ function getResult() {
   // https://github.com/davidbau/seedrandom
   let rng = new Math.seedrandom(
     document.getElementById("randomSeed").value === ""
-      ? null
+      ? null // if empty, sets random seed
       : document.getElementById("randomSeed").value
   );
 
   // shuffle randomPool with rng()
-  // Durstenfeld shuffle : https://en.wikipedia.org/wiki/Fisher-Yates_shuffle#The_modern_algorithm
-  for (let i = randomPool.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [randomPool[i], randomPool[j]] = [randomPool[j], randomPool[i]];
-  }
+  shuffleArray(randomPool, rng);
 
   // divide extraDuties by randomPool.length
   let baseDuties = Math.floor(extraDuties / randomPool.length);
@@ -563,13 +575,17 @@ function getResult() {
     }
   }
 
-  // console.log(nameListCopy);
-
+  // calendar = {day: name}
   let calendar = {};
+
+  // get total days in current month
   let totalDaysInMonth = new Date(year, month, 0).getDate();
-  // create dict of duty days of the month with weekends and holidays excluded
-  let dutyDays = {}; // change to array
+  // get array of duty days of the month with weekends and holidays excluded
+  let dutyDays = Array(totalDaysInMonth + 1).fill(0);
+  // get array of dates of holidays
   let holsDates = hols.map((date) => date.getDate());
+
+  // fill dutyDays with 1s and 0s, 1 for duty day, 0 for no duty day
   for (let i = 1; i <= totalDaysInMonth; i++) {
     let date = new Date(year, month - 1, i);
     if (date.getDay() === 0 || date.getDay() === 6 || holsDates.includes(i)) {
@@ -578,39 +594,47 @@ function getResult() {
       dutyDays[i] = 1;
     }
   }
-  // console.log(holsDates);
-  // console.log(dutyDays);
-  // fill calendar with names, starting from 1st day of month, excluding weekends and holidays, and excluding the names' block out dates
-  // calendar = {day: name}
-  // use backtracking to fill calendar
+
+  // Function to fill calendar with names with backtracking, starting from 1st day of month, excluding weekends, holidays, and the names' block out dates
   function fillCalendar(day) {
     // check if day is number of days in month + 1
     if (day > totalDaysInMonth) {
       return true;
     }
 
+    // check if day is a no duty day
     if (dutyDays[day] === 0) {
       return fillCalendar(day + 1);
     }
 
-    // check if day is in any name's block out dates
+    // flag to check if there's a working solution
     let noSolution = true;
-    // shuffle nameListCopy to spread out names
-    for (let name of Object.keys(nameListCopy)
-      .map((value) => ({ value, sort: rng() }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(({ value }) => value)) {
+
+    // shuffle nameListCopy's keys to spread out names
+    let nameListCopyKeys = Object.keys(nameListCopy);
+    shuffleArray(nameListCopyKeys, rng);
+
+    // check if day is in any name's block out dates
+    for (let name of nameListCopyKeys) {
+      // check if day not in name's block out dates
       if (!nameBlock[name].includes(day)) {
+        // check if name has duties left
         if (nameListCopy[name] > 0) {
-          nameListCopy[name]--;
+          // add name to calendar
           calendar[day] = name;
-          // console.log(dutyDays[day], day);
+          // remove duty
+          nameListCopy[name]--;
+
+          // check if next day(s) can be filled
           if (fillCalendar(day + 1)) {
             noSolution = false;
             break;
           }
+
+          // didn't break, next day(s) couldn't be filled, current solution didn't work
           // remove name from calendar
           delete calendar[day];
+          // add back duty
           nameListCopy[name]++;
         }
       }
@@ -619,7 +643,7 @@ function getResult() {
     return !noSolution;
   }
 
-  // console.log(calendar);
+  // check if can fill calendar (start from 1st day of month)
   if (!fillCalendar(1)) {
     // display error message, return
     document.getElementById("resultError").style.display = "block";
@@ -632,6 +656,7 @@ function getResult() {
     return;
   }
 
+  // add holiday names to calendar
   for (let holDay of holsDates) {
     calendar[holDay] = `- (${
       Object.keys(holNames).includes(holDay.toString())
@@ -639,8 +664,6 @@ function getResult() {
         : "NO DUTY"
     })`;
   }
-
-  // console.log(calendar);
 
   // format calendar into string
   let result = `Hi all, I've sent out the ${month}/${year} duty roster. Please take note of your duties. Thanks!\n\n${month}/${year}:\n\n`;
@@ -656,7 +679,6 @@ function getResult() {
       calendar[day].charAt(0).toUpperCase() + calendar[day].slice(1)
     }\n`;
   }
-  // console.log(result);
 
   // display result
   document.getElementById("result").value = result;
@@ -668,16 +690,18 @@ function getResult() {
   document.getElementById("resultError").style.display = "none";
 }
 
+// Function to copy result to clipboard
 function copyResult() {
   let copyText = document.getElementById("result");
   copyText.select();
-  copyText.setSelectionRange(0, 99999); // For mobile devices
+  copyText.setSelectionRange(0, 99999); // for mobile devices
 
-  // Copy the text inside the text field
+  // copy the text inside the text field
   navigator.clipboard.writeText(copyText.value);
 
-  // Alert the copied text
+  // alert the copied text
   alert("Copied the text: " + copyText.value);
 }
 
+// Initialise localStorage
 localStorageInit();
