@@ -51,8 +51,13 @@ function localStorageInit() {
     autoResize("randomSeed");
   }
   if (localStorage.getItem("ignoreFirstThreeLines")) {
-    document.getElementById("ignoreFirstThreeLines").checked =
-      localStorage.getItem("ignoreFirstThreeLines");
+    if (
+      (localStorage.getItem("ignoreFirstThreeLines") === "true") !==
+      document.getElementById("ignoreFirstThreeLines").checked
+    ) {
+      // just changing .checked doesn't trigger the change event
+      document.getElementById("ignoreFirstThreeLines").click();
+    }
   }
 }
 
@@ -127,6 +132,9 @@ function checkNameRepeat(name) {
 // Function to format date string
 // comma seperated, dd-mm-yyyy or dd-mm-yyyy - dd-mm-yyyy
 function formatDate(line, rawDates, nameBlockError) {
+  // replace all instances of "to" with "-" in the rawDates string
+  rawDates = rawDates.replace(/to/g, "-");
+
   // split comma, trim and filter
   let dates = rawDates
     .split(",")
@@ -185,12 +193,16 @@ function formatDate(line, rawDates, nameBlockError) {
         return;
       }
 
+      // this var allows firstDate to be set to false after year is checked
+      let firstDateSetTo = true;
+
       // set month if month = 0 or if its the first date
       if (month === 0 || firstDate) {
         month = dateRange[1 + i];
         updateMonthYear();
-        // first date has been formatted
-        firstDate = false;
+        // first date has been formatted, set firstDate to false after year is checked
+        firstDateSetTo = false;
+
         // else check if month is the same
       } else if (month !== dateRange[1 + i]) {
         // display error message, return
@@ -206,14 +218,16 @@ function formatDate(line, rawDates, nameBlockError) {
         nameBlockError.style.display = "block";
         nameBlockError.innerHTML = `Invalid year ${
           dateRange[2 + i]
-        } in ${line}`;
+        } (not this or next year) in ${line}`;
         return;
       }
 
       // set year if year = 0, else check if year is the same
-      if (year === 0) {
+      if (year === 0 || firstDate) {
         year = dateRange[2 + i];
         updateMonthYear();
+        // set firstDate to false after year is checked
+        firstDate = firstDateSetTo;
       } else if (year !== dateRange[2 + i]) {
         // display error message, return
         nameBlockError.style.display = "block";
@@ -323,6 +337,14 @@ function updateNameList() {
   } else {
     nameListInfo.style.display = "none";
   }
+
+  // sort nameList alphabetically so that it's reproducible regardless of order of names in nameList
+  nameList = Object.keys(nameList)
+    .sort()
+    .reduce((obj, key) => {
+      obj[key] = nameList[key];
+      return obj;
+    }, {});
 }
 
 // Function to update nameBlock
@@ -438,7 +460,9 @@ function updateExcludeNames() {
       }
       excludeNamesError.style.display = "none";
       return true;
-    });
+    })
+    // sort alphabetically so that it's reproducible regardless of order of names in excludeNames
+    .sort();
 }
 
 // Function that updates hols with all days in the month that is a holiday in Singapore with date-holidays
@@ -455,9 +479,9 @@ function getHolidays() {
   // update hols
   hols = holidaysInMonth.map((holiday) => new Date(holiday.date));
 
-  // update holNames
+  // update holNames {day: name}
   holNames = holidaysInMonth.reduce((obj, holiday) => {
-    obj[new Date(holiday.date).getDay()] = holiday.name;
+    obj[new Date(holiday.date).getDate()] = holiday.name;
     return obj;
   }, {});
 }
@@ -529,26 +553,35 @@ function getResult() {
   for (let id of errorIds) {
     if (document.getElementById(id).style.display === "block") {
       document.getElementById("resultError").style.display = "block";
+      document.getElementById("result").style.display = "none";
       document.getElementById("resultError").innerHTML = "Errors above";
       return;
     }
   }
-  document.getElementById("result").value = "Loading...";
-  document.getElementById("result").style.display = "block";
 
   // extra duties to assign to fill up numDaysInMonth
   let extraDuties = numDaysInMonth - totalDuties;
 
+  // check if the number of people to assign duties to is less than the number of days in the month
   if (extraDuties < 0) {
+    document.getElementById("resultError").style.display = "block";
+    document.getElementById("result").style.display = "none";
+    document.getElementById(
+      "resultError"
+    ).innerHTML = `Total duties (${totalDuties}) > ${numDaysInMonth} days in month`;
     return;
   }
 
+  // display loading message
+  document.getElementById("result").value = "Loading...";
+  document.getElementById("result").style.display = "block";
+
   let nameListCopy = Object.assign({}, nameList);
 
-  // create random pool, filter out names in excludeNames, sort alphabetically
-  let randomPool = Object.keys(nameList)
-    .filter((name) => !excludeNames.includes(name))
-    .sort();
+  // create random pool, filter out names in excludeNames, no need sort again since nameList is already sorted
+  let randomPool = Object.keys(nameList).filter(
+    (name) => !excludeNames.includes(name)
+  );
 
   // seedrandom takes in a string
   // https://github.com/davidbau/seedrandom
@@ -575,13 +608,13 @@ function getResult() {
     }
   }
 
-  // calendar = {day: name}
+  // calendar = {day (int): name}
   let calendar = {};
 
   // get total days in current month
   let totalDaysInMonth = new Date(year, month, 0).getDate();
   // get array of duty days of the month with weekends and holidays excluded
-  let dutyDays = Array(totalDaysInMonth + 1).fill(0);
+  let dutyDays = Array(totalDaysInMonth + 1).fill(1);
   // get array of dates of holidays
   let holsDates = hols.map((date) => date.getDate());
 
@@ -590,8 +623,6 @@ function getResult() {
     let date = new Date(year, month - 1, i);
     if (date.getDay() === 0 || date.getDay() === 6 || holsDates.includes(i)) {
       dutyDays[i] = 0;
-    } else {
-      dutyDays[i] = 1;
     }
   }
 

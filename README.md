@@ -17,3 +17,11 @@ Build CSS with:
 ```
 npx tailwindcss -i input.css -o output.css  --minify
 ```
+
+---
+
+### TODO
+
+- [ ] Allow for inital 0 duties per person when number of people > days in month
+- [ ] Display inital duties per person
+- [ ] Improve performance
