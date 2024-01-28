@@ -18,14 +18,22 @@
       <h1 class="text-3xl font-bold underline mb-2 mr-2">Level Duty Planner</h1>
 
       <a
-        class="text-gray-500 underline text-sm"
+        class="text-gray-500 underline text-sm px-4"
         href="https://github.com/leezhongjun/duty-planner"
+        target="_blank"
       >
         GitHub Source
       </a>
+      <a
+        class="text-gray-500 underline text-sm"
+        href="./FAQ.md"
+        target="_blank"
+      >
+        FAQ
+      </a>
     </div>
 
-    <label for="setSave" class="flex items-center mt-4 mb-2">
+    <label for="setSave" class="flex items-center mt-4">
       <input
         type="checkbox"
         id="setSave"
@@ -36,22 +44,22 @@
       Save inputs for future use?
     </label>
 
-    <h2 class="text-xl font-bold mt-2">Name list and extra duties</h2>
-    <p class="text-gray-500 italic leading-loose">
+    <h2 class="text-xl font-bold mt-4">Name list and extra duties</h2>
+    <p class="text-gray-500 italic leading-loose mb-2">
       Format: {name} {no. of extra duties} (empty if no extra duty)<br />
       Example: Ian 1
     </p>
     <textarea
       id="nameList"
       class="w-full h-[115px] resize-none border border-gray-300 rounded-md p-2"
-      oninput="autoResize(this.id); updateNameList(); updateNameBlock(); updateSave()"
+      oninput="autoResize(this.id); updateNameList(); updateNameBlock(); updateExcludeNames(); updateSave()"
       placeholder="Ian 1&#10;Danyel&#10;Xavier&#10;Neville 2"
     ></textarea>
     <p id="nameListError" class="text-red-500 hidden">Error:</p>
     <p id="nameListInfo" class="hidden">No. of names: Total extra duties:</p>
 
-    <h2 class="text-xl font-bold mt-2">Block out dates</h2>
-    <p class="text-gray-500 italic leading-loose">
+    <h2 class="text-xl font-bold mt-4">Block out dates</h2>
+    <p class="text-gray-500 italic leading-loose mb-2">
       Format: {name}/{block out dates}<br />
       Example: Ian/03-01-2024, 16-01-2024 - 18-01-2024
     </p>
@@ -73,7 +81,7 @@
     ></textarea>
     <p id="nameBlockError" class="text-red-500 hidden">Error:</p>
 
-    <h2 id="dateHeader" class="text-xl font-bold mt-2">
+    <h2 id="dateHeader" class="text-xl font-bold mt-4 mb-2">
       Select days with no duty (holidays, etc.)
     </h2>
     <input
@@ -83,7 +91,7 @@
       placeholder="Click here"
     />
 
-    <h2 class="text-xl font-bold mt-2">Exclude from random selection</h2>
+    <h2 class="text-xl font-bold mt-4 mb-2">Exclude from random selection</h2>
     <textarea
       id="excludeNames"
       class="w-full h-18 resize-none border border-gray-300 rounded-md p-2"
@@ -92,7 +100,7 @@
     ></textarea>
     <p id="excludeNamesError" class="text-red-500 hidden">Error:</p>
 
-    <h2 class="text-xl font-bold mt-2">Random seed</h2>
+    <h2 class="text-xl font-bold mt-4">Random seed</h2>
     <p class="text-gray-500 italic leading-loose">
       Blank: random seed<br />
       Set seed value to <u>yyyymm</u>
@@ -104,7 +112,7 @@
       placeholder="Leave blank for random seed"
     />
 
-    <h2 class="text-xl font-bold mt-2">Result</h2>
+    <h2 class="text-xl font-bold mt-4">Result</h2>
     <div class="flex mt-2 mb-2">
       <button
         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"

@@ -1,6 +1,10 @@
 # Duty Planner
 
-Plans a level duty schedule for every working day of a month, given a list of people and their availability.
+This planner assigns duties to everyone on the name list as fairly as possible for all working days of a month.
+
+You can add extra duties (for particular people), blockout dates (dates that someone cannot do duty on), and additional dates with no duties.
+
+Read more in the [FAQ](FAQ.md).
 
 Created with HTML, JavaScript, and Tailwind CSS
 
@@ -20,8 +24,6 @@ npx tailwindcss -i input.css -o output.css  --minify
 
 ---
 
-### TODO
+## TODO
 
-- [ ] Allow for inital 0 duties per person when number of people > days in month
-- [ ] Display inital duties per person
 - [ ] Improve performance

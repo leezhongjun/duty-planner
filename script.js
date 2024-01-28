@@ -4,9 +4,18 @@ let nameList = {};
 let nameBlock = {};
 let excludeNames = [];
 let totalDuties = 0;
-// Month and year of level duty
+
+// Month and year of level duty - defaults to next month
 let month = 0;
 let year = 0;
+let now = new Date();
+if (now.getMonth() == 11) {
+  month = 1;
+  year = now.getFullYear() + 1;
+} else {
+  month = now.getMonth() + 2;
+  year = now.getFullYear();
+}
 // Array of Date objects
 let hols = [];
 // date.getDay(): holiday name
@@ -197,7 +206,7 @@ function formatDate(line, rawDates, nameBlockError) {
       let firstDateSetTo = true;
 
       // set month if month = 0 or if its the first date
-      if (month === 0 || firstDate) {
+      if (firstDate) {
         month = dateRange[1 + i];
         updateMonthYear();
         // first date has been formatted, set firstDate to false after year is checked
@@ -223,7 +232,7 @@ function formatDate(line, rawDates, nameBlockError) {
       }
 
       // set year if year = 0, else check if year is the same
-      if (year === 0 || firstDate) {
+      if (firstDate) {
         year = dateRange[2 + i];
         updateMonthYear();
         // set firstDate to false after year is checked
@@ -286,20 +295,16 @@ function updateNameList() {
     if (!isNaN(parseFloat(lineArr.at(-1))) && isFinite(lineArr.at(-1))) {
       // ends with a number, which is no. of extra duties
       let duties = parseInt(lineArr.at(-1));
+      // convert to lower case, remove spaces
+      let name = lineArr.slice(0, -1).join("").toLowerCase();
 
-      // check its not -1 extra duties which is no duties
-      if (duties !== -1) {
-        // convert to lower case, remove spaces
-        let name = lineArr.slice(0, -1).join("").toLowerCase();
-
-        // check if name in name list
-        if (checkNameRepeat(name)) {
-          return;
-        }
-
-        // initialise with 1 base duty
-        nameList[name] = duties + 1;
+      // check if name in name list
+      if (checkNameRepeat(name)) {
+        return;
       }
+
+      // initialise with extra duties
+      nameList[name] = duties;
     } else {
       // no extra duties
       // convert to lower case, remove spaces
@@ -310,8 +315,8 @@ function updateNameList() {
         return;
       }
 
-      // initialise with 1 duty
-      nameList[name] = 1;
+      // initialise with 0 duty
+      nameList[name] = 0;
     }
   }
 
@@ -331,8 +336,8 @@ function updateNameList() {
     nameListInfo.innerHTML = `No. of names: ${Object.keys(nameList).length}
           ${
             totalDuties > numDaysInMonth
-              ? `<br /><span class="text-red-500">Total duties: ${totalDuties} > ${numDaysInMonth} days in month</span>`
-              : `&emsp; Total duties: ${totalDuties}`
+              ? `<br /><span class="text-red-500">Total extra duties: ${totalDuties} > ${numDaysInMonth} days in month</span>`
+              : `<br />Total extra duties: ${totalDuties}`
           }`; // > x days of duty
   } else {
     nameListInfo.style.display = "none";
@@ -442,27 +447,34 @@ function updateExcludeNames() {
   // split newline, trim, filter empty lines
   let lines = rawExcludeNames
     .split("\n")
-    .map((line) => line.trim())
+    // convert to lower case, remove spaces
+    .map((line) => line.trim().toLowerCase().replace(/\s/g, ""))
     .filter((line) => line);
 
-  excludeNames = lines
-    // convert to lower case, remove spaces
-    .map((name) => name.toLowerCase().replace(/\s/g, ""))
+  excludeNames = [];
+  for (let name of lines) {
     // if name not in name list raise error
-    .filter((name) => {
-      if (!Object.keys(nameList).includes(name)) {
-        // display error message, return
-        excludeNamesError.style.display = "block";
-        excludeNamesError.innerHTML = `${
-          name.charAt(0).toUpperCase() + name.slice(1)
-        } not in name list`;
-        return false;
-      }
-      excludeNamesError.style.display = "none";
-      return true;
-    })
-    // sort alphabetically so that it's reproducible regardless of order of names in excludeNames
-    .sort();
+    if (!Object.keys(nameList).includes(name)) {
+      // display error message, return
+      excludeNamesError.style.display = "block";
+      excludeNamesError.innerHTML = `${
+        name.charAt(0).toUpperCase() + name.slice(1)
+      } not in name list`;
+      return;
+    }
+    if (excludeNames.includes(name)) {
+      // display error message, return
+      excludeNamesError.style.display = "block";
+      excludeNamesError.innerHTML = `${
+        name.charAt(0).toUpperCase() + name.slice(1)
+      } in exclude name list > 1`;
+      return;
+    }
+    excludeNames.push(name);
+  }
+  excludeNamesError.style.display = "none";
+  // sort excludeNames alphabetically so that it's reproducible regardless of order of names in excludeNames
+  excludeNames.sort();
 }
 
 // Function that updates hols with all days in the month that is a holiday in Singapore with date-holidays
@@ -568,7 +580,7 @@ function getResult() {
     document.getElementById("result").style.display = "none";
     document.getElementById(
       "resultError"
-    ).innerHTML = `Total duties (${totalDuties}) > ${numDaysInMonth} days in month`;
+    ).innerHTML = `Error - Total extra duties: ${totalDuties} > ${numDaysInMonth} days in month`;
     return;
   }
 
@@ -594,18 +606,19 @@ function getResult() {
   // shuffle randomPool with rng()
   shuffleArray(randomPool, rng);
 
-  // divide extraDuties by randomPool.length
-  let baseDuties = Math.floor(extraDuties / randomPool.length);
+  // divide extraDuties by nameList.length and add baseDuties to each name
+  let baseDuties = Math.floor(extraDuties / Object.keys(nameListCopy).length);
+
+  for (let name in nameListCopy) {
+    nameListCopy[name] += baseDuties;
+  }
 
   // add remainder to first few names in randomPool
-  let remainder = extraDuties % randomPool.length;
+  let remainder = extraDuties % Object.keys(nameListCopy).length;
 
   // add duties to nameList
-  for (let i = 0; i < randomPool.length; i++) {
-    nameListCopy[randomPool[i]] += baseDuties;
-    if (i < remainder) {
-      nameListCopy[randomPool[i]]++;
-    }
+  for (let i = 0; i < remainder; i++) {
+    nameListCopy[randomPool[i % randomPool.length]]++;
   }
 
   // calendar = {day (int): name}
@@ -736,3 +749,5 @@ function copyResult() {
 
 // Initialise localStorage
 localStorageInit();
+
+updateMonthYear();
